@@ -1,10 +1,10 @@
 #region imports and variables
 import os
 import sys
-import smartsheet
+#import smartsheet
 import time
 from datetime import datetime
-from smartsheet.exceptions import ApiError
+#from smartsheet.exceptions import ApiError
 import requests
 from requests.structures import CaseInsensitiveDict
 import json
@@ -12,8 +12,14 @@ import re
 import pandas as pd
 from dataclasses import dataclass
 from typing import Optional, Tuple, List
+from pathlib import Path
+ss_config = json.loads(Path('configs/ss_config.json').read_text())
 
-# Check if we are on a dev computer or server
+"""
+# run from root
+python clients/ss_client.py 
+"""
+
 if os.name == 'nt':
     sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
 else:
@@ -99,38 +105,10 @@ class SmartsheetGridSingleton:
             self.NE = None
 #endregion
 
-default_ss_config = {
-    'smartsheet_token':smartsheet_admin_token,
-    'regional_sheetid_obj':
-        {
-            "ALL": "3858046490306436",
-            "INTAKE": "6270136630962052",
-            "HI": "691453002311556",
-            "NY": "3506202769418116",
-            "NORCAL": "2943252815996804",
-            "SOCAL": "5758002583103364",
-            "WA": "1254402955732868",
-            "FL": "5195052629682052",
-            "MTN.": "8009802396788612",
-            "ATX": "269240537245572",
-            "NE": "5898740071458692"
-        },
-    'wkspc_template_id':  5301436075534212,
-    'automated_wkspc_template_id': 7768425427691396,
-    'saas_id': 5728420458981252, 
-    'saas_update_check_column_id': 4886205208782724,
-    'pl30_id': 3858046490306436,
-    'field_admins_id':2077914675079044,
-    'project_admins_id':2231803353294724,
-    'project_review_id':1394789389232004,
-    'user_column_names': ["Platform Containers addt'l Permissions", 'PM', 'PE', 'SUP', 'FM', 'NON SYS Created By']
-    }
-
 class SmartsheetClient():
     '''words'''
-    def __init__(self, log, config:dict = None):
-        if config is None:
-            config = default_ss_config
+    def __init__(self, log):
+
         self.apply_config(config)
         self.log=log
         self.smart = smartsheet.Smartsheet(access_token=self.smartsheet_token)
@@ -405,9 +383,9 @@ class SmartsheetClient():
         shares = [
             {'type': 'email', 'value': email, 'access_level': 'ADMIN'} for email in email_list
         ] + [
-            {'type': 'groupId', 'value': self.field_admins_id, 'access_level': 'ADMIN'},
-            {'type': 'groupId', 'value': self.project_admins_id, 'access_level': 'ADMIN'},
-            {'type': 'groupId', 'value': self.project_review_id, 'access_level': 'EDITOR'}
+            {'type': 'groupId', 'value': ss_config['field_admins_id'], 'access_level': 'ADMIN'},
+            {'type': 'groupId', 'value': ss_config['project_admins_id'], 'access_level': 'ADMIN'},
+            {'type': 'groupId', 'value': ss_config['project_review_id'], 'access_level': 'EDITOR'}
         ]
 
         for share in shares:
