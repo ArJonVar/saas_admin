@@ -102,6 +102,6 @@ def main():
     for i, (saas_row_id, project_name, enum) in enumerate(zip(saas_row_ids, project_names, enums), start=1):
         logger.info(f"{i}/{len(saas_row_ids)}: {project_name}")
         main_per_row(saas_row_id)
-    logger.info('finished!')
+    logger.debug('finished!')
 
 main()

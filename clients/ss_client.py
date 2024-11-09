@@ -32,6 +32,7 @@ from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
 smart = smartsheet.Smartsheet(access_token=smartsheet_admin_token)
 smart.errors_as_exceptions(True)
+grid.token=smartsheet_admin_token
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
 #endregion
 
@@ -66,9 +67,8 @@ class ProjectObj:
             f"need_new_eg: {self.need_new_eg}, need_new_ss: {self.need_new_ss}\n"
             f"eg_link: {self.eg_link}\n"
             f"ss_link: {self.ss_link}\n"
-            f"----------------\n"
+            f"----------------"
         )
-
 @dataclass
 class PostingData:
     need_update_column_id: Optional[int] = None
@@ -85,7 +85,6 @@ class PostingData:
 class SmartsheetClient():
     '''words'''
     def __init__(self):
-        grid.token=smartsheet_admin_token
         self.ss_link = ""
         logger.info('Initializing Smartsheet Client...')
         self.cached_sheets = {
@@ -309,7 +308,7 @@ class SmartsheetClient():
         return region
 #endregion
 #region workspaces
-    def save_as_new_wrkspc(self, template_id: str, name:str):
+    def save_as_new_wrkspc(self, template_id: str, name:str) ->dict:
         '''makes new workspace from another one as the template'''
         return smart.Workspaces.copy_workspace(
             template_id,           # workspace_id
@@ -317,9 +316,9 @@ class SmartsheetClient():
                 'new_name': f"{name}"
                 })
             ).to_dict()
-    def get_wrkspcs(self):
+    def get_wrkspcs(self) -> dict:
         return smart.Workspaces.list_workspaces(include_all=True).to_dict()
-    def get_wrkspc_from_project_link(self, project: ProjectObj):
+    def get_wrkspc_from_project_link(self, project: ProjectObj) -> dict:
         '''generates a list of all workspaces, searches for a workspace with the given SS link and then returns the associated ID'''
         wrkspc = None
         get_workspace_data = self.get_wrkspcs()
@@ -347,7 +346,7 @@ class SmartsheetClient():
             if workspace.get("name") == f'Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")}':
                 self.isnew_bool = False
                 logger.info(f'a workspace audit within smartsheet revealed that Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")} already exists')  
-    def wrkspc_shares_need_updating(self, project:ProjectObj, wrkspc_id: int):
+    def wrkspc_shares_need_updating(self, project:ProjectObj, wrkspc_id: int) -> bool:
         '''returns true if the workspace is missing user in shares group'''
         response = smart.Workspaces.list_shares(
             wrkspc_id,       # workspace_id
@@ -442,8 +441,6 @@ class SmartsheetClient():
             else:
                 logger.info(f'update bool checkbox posting had result of {updated_row.message}')
 #endregion
-
-
 
 if __name__ == "__main__":
     pass
