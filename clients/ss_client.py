@@ -12,9 +12,12 @@ import re
 import pandas as pd
 from dataclasses import dataclass
 from typing import Optional, Tuple, List
+import logging
+from configs.setup_logger import setup_logger
+logger = setup_logger(__name__, level=logging.DEBUG)
+
 from pathlib import Path
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
-breakpoint()
 # Check if we are on a dev computer or server
 if os.name == 'nt':
     sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
@@ -82,6 +85,7 @@ class PostingData:
 class SmartsheetClient():
     '''words'''
     def __init__(self, log, config:dict = None):
+        logger.debug('Initializing Smartsheet Client...')
         if config is None:
             config = default_ss_config
         self.apply_config(config)
