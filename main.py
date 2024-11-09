@@ -8,10 +8,12 @@ import pandas as pd
 import os
 from dataclasses import dataclass
 from typing import Optional
+from pathlib import Path
+ss_config = json.loads(Path("configs/ss_config.json").read_text())
 # Add the parent directory of V3 to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from clients.ss_client import SmartsheetClient, ProjectObj, PostingData, SmartsheetGridSingleton
+from clients.ss_client import SmartsheetClient, ProjectObj, PostingData
 
 # Check if we are on a dev computer or server
 if os.name == 'nt':
@@ -45,7 +47,7 @@ def new_ss_workspace(project: ProjectObj, posting_data:PostingData):
     '''this uses the SS client to create a new project workspace from the template, giving it appropriate permissions and then posting the link back to the project list'''
     log.log(f"Creating Smartsheet Workspace for {project.name}")
     testing_workspace_name = f"ProjectTESTING_{project.name[:28]}_{project.enum}"
-    new_wrkspc = ss_client.save_as_new_wrkspc(ss_client.wkspc_template_id, project.ss_workspace_name)
+    new_wrkspc = ss_client.save_as_new_wrkspc(ss_config.wkspc_template_id, project.ss_workspace_name)
     new_wrkspc_id = new_wrkspc.get("data").get("id")
     ss_client.ss_permission_setting(project, new_wrkspc_id),
     posting_data_updated = ss_client.get_new_post_ids(project, posting_data)

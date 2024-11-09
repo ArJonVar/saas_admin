@@ -12,7 +12,9 @@ import re
 import pandas as pd
 from dataclasses import dataclass
 from typing import Optional, Tuple, List
-
+from pathlib import Path
+ss_config = json.loads(Path("configs/ss_config.json").read_text())
+breakpoint()
 # Check if we are on a dev computer or server
 if os.name == 'nt':
     sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
@@ -52,7 +54,7 @@ class ProjectObj:
         return (
             f"\n----------------\n"
             f"PROJECT: {self.name}\n\n"
-            f"name: {self.name}, enum: {self.enum}, saas row id={self.saas_row_id}\n"
+            f"name: {self.name}, enum: {self.enum}, saas_row_id={self.saas_row_id}\n"
             f"region: {self.region}, state: {self.state}\n"
             f"users: {', '.join(self.users)}\n" 
             f"user_emails: {', '.join(self.user_emails)}\n"
@@ -76,32 +78,6 @@ class PostingData:
     ss_link: Optional[str] = None
 #endregion
 
-default_ss_config = {
-    'smartsheet_token':smartsheet_admin_token,
-    'regional_sheetid_obj':
-        {
-            "ALL": "3858046490306436",
-            "INTAKE": "6270136630962052",
-            "HI": "691453002311556",
-            "NY": "3506202769418116",
-            "NORCAL": "2943252815996804",
-            "SOCAL": "5758002583103364",
-            "WA": "1254402955732868",
-            "FL": "5195052629682052",
-            "MTN.": "8009802396788612",
-            "ATX": "269240537245572",
-            "NE": "5898740071458692"
-        },
-    'wkspc_template_id':  5301436075534212,
-    'automated_wkspc_template_id': 7768425427691396,
-    'saas_id': 5728420458981252, 
-    'saas_update_check_column_id': 4886205208782724,
-    'pl30_id': 3858046490306436,
-    'field_admins_id':2077914675079044,
-    'project_admins_id':2231803353294724,
-    'project_review_id':1394789389232004,
-    'user_column_names': ["Platform Containers addt'l Permissions", 'PM', 'PE', 'SUP', 'FM', 'NON SYS Created By']
-    }
 
 class SmartsheetClient():
     '''words'''
@@ -320,10 +296,10 @@ class SmartsheetClient():
 
         if sheet is None:
             # Load the DataFrame (replace this with your actual loading logic)
-            self.log.log(f"Loading the {region} Smartsheet...")
+            self.log.log(f"Fetching the {region} Smartsheet...")
             sheet = grid(sheet_id)
             sheet.fetch_content()
-            sheet = self.cached_sheets[obj_region]  # Assign the loaded DataFrame to the cached sheets
+            self.cached_sheets[obj_region] = sheet
 
         return sheet
 #endregion
