@@ -74,29 +74,6 @@ class PostingData:
     eg_link: Optional[str] = None
     ss_column_id: Optional[int] = None
     ss_link: Optional[str] = None
-
-class SmartsheetGridSingleton:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(SmartsheetGridSingleton, cls).__new__(cls)
-            cls._instance.__initialized = False
-        return cls._instance
-
-    def __init__(self):
-        if not self.__initialized:
-            self.__initialized = True
-            self.SAAS = None
-            self.HI = None
-            self.NY = None
-            self.NORCAL = None
-            self.SOCAL = None
-            self.WA = None
-            self.FL = None
-            self.MTN = None
-            self.ATX = None
-            self.NE = None
 #endregion
 
 default_ss_config = {
@@ -138,6 +115,18 @@ class SmartsheetClient():
         grid.token=self.smartsheet_token
         self.ss_link = ""
         self.log.log('Initializing Smartsheet Client...')
+        self.cached_sheets = {
+            'SAAS':None,
+            'HI': None,
+            'NY': None,
+            'NORCAL': None,
+            'SOCAL': None,
+            'WA': None,
+            'FL': None,
+            'MTN': None,
+            'ATX': None,
+            'NE': None
+        }
 #region helpers
     def apply_config(self, config:dict):
         '''turns all config items into self.key = value'''
