@@ -1,0 +1,58 @@
+
+
+11/01/2024 11:48:36  main.py--
+  02:22  __main__.<cell line: 86>(): 
+PROJECT: Minter Creek - Hillside Fire Remediation
+
+enum: 02415, name: Minter Creek - Hillside Fire Remediation
+region: WA, state: WA
+user: Jesse Worthington, Jeremy Deleon, Jesse Long, Gil Humphreys, Quinn Colburn, gilberth@dowbuilt.com
+user_emails: gilberth@dowbuilt.com, quinnc@dowbuilt.com, jeremyd@dowbuilt.com, jessel@dowbuilt.com, jessew@dowbuilt.com, gilberth@dowbuilt.com
+action_type: UPDATE PERMISSIONS, update_bool: True,
+eg_bool: False, ss_bool: False
+eg_link: none
+ss_link: none
+
+
+  02:22  __main__.new_ss_workspace(): Creating Smartsheet Workspace for Minter Creek - Hillside Fire Remediation
+  02:34  __main__.new_ss_workspace(): ss creation complete
+
+11/01/2024 11:54:34  ss_client.py--
+  00:07  ss_client.__init__(): Initializing Smartsheet Client...
+
+11/01/2024 11:54:34  main.py--
+  02:31  __main__.<cell line: 86>(): 
+PROJECT: Minter Creek - Hillside Fire Remediation
+
+enum: 02415, name: Minter Creek - Hillside Fire Remediation
+region: WA, state: WA
+user: Jesse Worthington, Gil Humphreys, gilberth@dowbuilt.com, Quinn Colburn, Jeremy Deleon, Jesse Long
+user_emails: gilberth@dowbuilt.com, quinnc@dowbuilt.com, jeremyd@dowbuilt.com, jessel@dowbuilt.com, jessew@dowbuilt.com, gilberth@dowbuilt.com
+action_type: UPDATE PERMISSIONS, update_bool: True,
+eg_bool: False, ss_bool: False
+eg_link: none
+ss_link: none
+
+
+  02:32  __main__.new_ss_workspace(): Creating Smartsheet Workspace for Minter Creek - Hillside Fire Remediation
+  02:44  __main__.new_ss_workspace(): ss creation complete
+
+11/01/2024 11:59:40  ss_client.py--
+  00:02  ss_client.__init__(): Initializing Smartsheet Client...
+
+11/01/2024 11:59:40  main.py--
+  02:10  __main__.<cell line: 86>(): 
+PROJECT: Minter Creek - Hillside Fire Remediation
+
+enum: 02415, name: Minter Creek - Hillside Fire Remediation
+region: WA, state: WA
+user: Jesse Worthington, Gil Humphreys, gilberth@dowbuilt.com, Quinn Colburn, Jeremy Deleon, Jesse Long
+user_emails: gilberth@dowbuilt.com, quinnc@dowbuilt.com, jeremyd@dowbuilt.com, jessel@dowbuilt.com, jessew@dowbuilt.com, gilberth@dowbuilt.com
+action_type: UPDATE PERMISSIONS, update_bool: True,
+eg_bool: False, ss_bool: False
+eg_link: none
+ss_link: none
+
+
+  02:10  __main__.new_ss_workspace(): Creating Smartsheet Workspace for Minter Creek - Hillside Fire Remediation
+  02:23  __main__.new_ss_workspace(): ss creation complete
