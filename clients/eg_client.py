@@ -36,11 +36,7 @@ class Person():
     name: str
 #endregion
 
-<<<<<<< Updated upstream
-# testing git DIFFERENT CHANGE
-=======
-# testing git CHANGED
->>>>>>> Stashed changes
+# testing git CHANGED ANOTHER TIME
 class EgnyteClient():
     '''words'''
     def __init__(self, config):
