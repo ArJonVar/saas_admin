@@ -96,7 +96,7 @@ def main_per_row(saas_row_id:int):
 def identify_open_saas_rows():
     '''makes a df from the saas sheet (https://app.smartsheet.com/sheets/4X2m4ChQjgGh2gf2Hg475945rwVpV5Phmw69Gp61?view=grid&filterId=7982787065079684) 
     and looks for open rows, returns ids, names, and enums in three lists'''
-    saas_sheet = ss_client.handle_smartsheets(region='SAAS', sheet_id=ss_client.saas_id)
+    saas_sheet = ss_client.handle_cached_smartsheets(region='SAAS', sheet_id=ss_client.saas_id)
     open_rows = saas_sheet.df.loc[saas_sheet.df['Saas Status'] == 'Open']
     return (
         open_rows['id'].values.tolist(),

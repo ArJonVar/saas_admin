@@ -158,10 +158,10 @@ class SmartsheetClient():
             - The regional sheet instance.
             - The sheet ID string (used to grab highly specific email data from the regional sheet).
         """
-        saas_sheet = self.handle_smartsheets(region='SAAS', sheet_id=self.saas_id)
+        saas_sheet = self.handle_cached_smartsheets(region='SAAS', sheet_id=self.saas_id)
         region = self.region_from_saas_rowid(saas_row_id, saas_sheet.df)
         regional_sheet_id = self.regional_sheetid_obj[region]
-        regional_sheet = self.handle_smartsheets(region, regional_sheet_id)
+        regional_sheet = self.handle_cached_smartsheets(region, regional_sheet_id)
         return saas_sheet, regional_sheet, regional_sheet_id
     def filter_to_relevent_row(self, saas_sheet: grid, regional_sheet: grid, enum:str, saas_row_id:str) -> tuple[str, pd.Series, pd.Series]:
         """
@@ -299,10 +299,10 @@ class SmartsheetClient():
         )
 
         return project_obj
-    def handle_smartsheets(self, region: str, sheet_id: str) -> grid:
+    def handle_cached_smartsheets(self, region: str, sheet_id: str) -> grid:
         """
         Checks if the regional grid object has already been loaded.
-        If not, loads it and assigns it to the corresponding attribute in the singleton SmartsheetGrid.
+        If not, loads it and caches it.
 
         Args:
             region (str): The name of the region to check and load.
@@ -311,21 +311,19 @@ class SmartsheetClient():
         Returns:
             grid: The loaded or existing grid object for the specified region.
         """
-        # Get the singleton instance of SmartsheetGrid
-        sheet_obj = SmartsheetGridSingleton()
 
         # Normalize the region name to handle special cases (e.g., MTN)
         obj_region = region.replace('.', '')
 
         # Check if the DataFrame for the region is already loaded
-        sheet = getattr(sheet_obj, obj_region, None)
+        sheet = self.cached_sheets[obj_region]
 
         if sheet is None:
             # Load the DataFrame (replace this with your actual loading logic)
             self.log.log(f"Loading the {region} Smartsheet...")
             sheet = grid(sheet_id)
             sheet.fetch_content()
-            setattr(sheet_obj, obj_region, sheet)  # Assign the loaded DataFrame to the singleton instance
+            sheet = self.cached_sheets[obj_region]  # Assign the loaded DataFrame to the cached sheets
 
         return sheet
 #endregion
