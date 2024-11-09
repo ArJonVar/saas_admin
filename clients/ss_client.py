@@ -1,6 +1,20 @@
 #region imports and variables
+# Check if we are on a dev computer or server
 import os
 import sys
+if os.name == 'nt':
+    sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
+else:
+    sys.path.append(os.path.expanduser(r"~/_Master"))
+
+# Import master_logger, master_smartsheet_grid, and master_globals
+try:
+    from master_smartsheet_grid import grid
+    from master_globals import smartsheet_admin_token
+except ImportError as e:
+    print(f"Error importing module: {e}")
+    sys.exit(1)
+
 import smartsheet
 import time
 from datetime import datetime
@@ -19,21 +33,6 @@ logger = setup_logger(__name__, level=logging.DEBUG)
 smart = smartsheet.Smartsheet(access_token=smartsheet_admin_token)
 smart.errors_as_exceptions(True)
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
-
-# Check if we are on a dev computer or server
-if os.name == 'nt':
-    sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
-else:
-    sys.path.append(os.path.expanduser(r"~/_Master"))
-
-# Import master_logger, master_smartsheet_grid, and master_globals
-try:
-    from master_logger import ghetto_logger
-    from master_smartsheet_grid import grid
-    from master_globals import smartsheet_admin_token
-except ImportError as e:
-    print(f"Error importing module: {e}")
-    sys.exit(1)
 #endregion
 
 #region Models
@@ -185,10 +184,15 @@ class SmartsheetClient():
         if proj_row["REGION"] == 'HI':
             ss_config['user_column_names'].append("PRINCIPAL")
 
-        user_column_ids = [
-            regional_column_df.loc[regional_column_df['title'] == column]['id'].iloc[0]
-            for column in ss_config['user_column_names']
-        ]
+        user_column_ids = []
+        for column in ss_config['user_column_names']:
+            matching_rows = regional_column_df.loc[regional_column_df['title'] == column]
+            if matching_rows.empty:
+                logger.debug(f"Column df for {proj_row['REGION']} did not return value for column '{column}'")
+                continue  # Skip this column if no match is found
+            user_column_ids.append(matching_rows['id'].iloc[0])
+
+
         # Fetch and process the reduced sheet data
         reduced_sheet = smart.Sheets.get_sheet(
             sheet_id,
