@@ -12,12 +12,14 @@ import re
 import pandas as pd
 from dataclasses import dataclass
 from typing import Optional, Tuple, List
+from pathlib import Path
 import logging
 from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
-
-from pathlib import Path
+smart = smartsheet.Smartsheet(access_token=smartsheet_admin_token)
+smart.errors_as_exceptions(True)
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
+
 # Check if we are on a dev computer or server
 if os.name == 'nt':
     sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
@@ -81,20 +83,12 @@ class PostingData:
     ss_link: Optional[str] = None
 #endregion
 
-
 class SmartsheetClient():
     '''words'''
-    def __init__(self, log, config:dict = None):
-        logger.debug('Initializing Smartsheet Client...')
-        if config is None:
-            config = default_ss_config
-        self.apply_config(config)
-        self.log=log
-        self.smart = smartsheet.Smartsheet(access_token=self.smartsheet_token)
-        self.smart.errors_as_exceptions(True)
-        grid.token=self.smartsheet_token
+    def __init__(self):
+        grid.token=smartsheet_admin_token
         self.ss_link = ""
-        self.log.log('Initializing Smartsheet Client...')
+        logger.info('Initializing Smartsheet Client...')
         self.cached_sheets = {
             'SAAS':None,
             'HI': None,
@@ -108,10 +102,6 @@ class SmartsheetClient():
             'NE': None
         }
 #region helpers
-    def apply_config(self, config:dict):
-        '''turns all config items into self.key = value'''
-        for key, value in config.items():
-            setattr(self, key, value)
     def try_except_pattern(self, value:str) -> str:
         '''wraps "value" in a try/accept format. used when pulling  info from DF because blank columns are not added to df, so you must try/except each df inquiry'''
         try:
@@ -138,9 +128,9 @@ class SmartsheetClient():
             - The regional sheet instance.
             - The sheet ID string (used to grab highly specific email data from the regional sheet).
         """
-        saas_sheet = self.handle_cached_smartsheets(region='SAAS', sheet_id=self.saas_id)
+        saas_sheet = self.handle_cached_smartsheets(region='SAAS', sheet_id=ss_config['saas_id'])
         region = self.region_from_saas_rowid(saas_row_id, saas_sheet.df)
-        regional_sheet_id = self.regional_sheetid_obj[region]
+        regional_sheet_id = ss_config['regional_sheetid_obj'][region]
         regional_sheet = self.handle_cached_smartsheets(region, regional_sheet_id)
         return saas_sheet, regional_sheet, regional_sheet_id
     def filter_to_relevent_row(self, saas_sheet: grid, regional_sheet: grid, enum:str, saas_row_id:str) -> tuple[str, pd.Series, pd.Series]:
@@ -161,11 +151,11 @@ class SmartsheetClient():
         
         proj_row = regional_sheet.df.loc[regional_sheet.df['ENUMERATOR'] == enum].iloc[0]
         if proj_row.empty:
-            self.log.log(f"No project data found for ENUMERATOR @ regional PL: {enum}")
+            logger.warning(f"No project data found for ENUMERATOR @ regional PL: {enum}")
 
         saas_row = saas_sheet.df.loc[saas_sheet.df['id'] == saas_row_id].iloc[0]
         if saas_row.empty:
-            self.log.log(f"No project data found for ENUMERATOR @ saas admin: {enum}")
+            logger.warning(f"No project data found for ENUMERATOR @ saas admin: {enum}")
 
         return proj_row, saas_row
     def process_permission_users(self, proj_row:pd.Series):
@@ -193,14 +183,14 @@ class SmartsheetClient():
         '''Extracts and processes user emails from regional sheet'''
 
         if proj_row["REGION"] == 'HI':
-            self.user_column_names.append("PRINCIPAL")
+            ss_config['user_column_names'].append("PRINCIPAL")
 
         user_column_ids = [
             regional_column_df.loc[regional_column_df['title'] == column]['id'].iloc[0]
-            for column in self.user_column_names
+            for column in ss_config['user_column_names']
         ]
         # Fetch and process the reduced sheet data
-        reduced_sheet = self.smart.Sheets.get_sheet(
+        reduced_sheet = smart.Sheets.get_sheet(
             sheet_id,
             row_ids=proj_row['id'],
             column_ids=user_column_ids,
@@ -300,7 +290,7 @@ class SmartsheetClient():
 
         if sheet is None:
             # Load the DataFrame (replace this with your actual loading logic)
-            self.log.log(f"Fetching the {region} Smartsheet...")
+            logger.info(f"Fetching the {region} Smartsheet...")
             sheet = grid(sheet_id)
             sheet.fetch_content()
             self.cached_sheets[obj_region] = sheet
@@ -317,14 +307,14 @@ class SmartsheetClient():
 #region workspaces
     def save_as_new_wrkspc(self, template_id: str, name:str):
         '''makes new workspace from another one as the template'''
-        return self.smart.Workspaces.copy_workspace(
+        return smart.Workspaces.copy_workspace(
             template_id,           # workspace_id
             smartsheet.models.ContainerDestination({
                 'new_name': f"{name}"
                 })
             ).to_dict()
     def get_wrkspcs(self):
-        return self.smart.Workspaces.list_workspaces(include_all=True).to_dict()
+        return smart.Workspaces.list_workspaces(include_all=True).to_dict()
     def get_wrkspc_from_project_link(self, project: ProjectObj):
         '''generates a list of all workspaces, searches for a workspace with the given SS link and then returns the associated ID'''
         wrkspc = None
@@ -334,13 +324,13 @@ class SmartsheetClient():
             if workspace.get("permalink") == project.ss_link:
                 wrkspc = workspace
         if project.ss_link == "none":
-            self.log.log('SS workspace update skipped due to lack of workspace existance')
+            logger.debug('SS workspace update skipped due to lack of workspace existance')
         elif wrkspc == None: 
-            self.log.log(f'Permissions Error: Workspace not found from link ({project.ss_link})')
+            logger.warning(f'Permissions Error: Workspace not found from link ({project.ss_link})')
         return wrkspc
     def rename_wrkspc(self, wrkspc_id:int, name:str):
-        self.log.log('renaming the workspace...')
-        self.updated_workspace = self.smart.Workspaces.update_workspace(
+        logger.info('renaming the workspace...')
+        self.updated_workspace = smart.Workspaces.update_workspace(
          wrkspc_id,       # workspace_id
          smartsheet.models.Workspace({
            'name': f"{name}"
@@ -348,14 +338,14 @@ class SmartsheetClient():
         )
     def audit_wrkspc_isnew(self):
         self.isnew_bool=True
-        response = self.smart.Workspaces.list_workspaces(include_all=True)
+        response = smart.Workspaces.list_workspaces(include_all=True)
         for workspace in response.to_dict().get("data"):
             if workspace.get("name") == f'Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")}':
                 self.isnew_bool = False
-                self.log.log(f'a workspace audit within smartsheet revealed that Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")} already exists')  
+                logger.info(f'a workspace audit within smartsheet revealed that Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")} already exists')  
     def wrkspc_shares_need_updating(self, project:ProjectObj, wrkspc_id: int):
         '''returns true if the workspace is missing user in shares group'''
-        response = self.smart.Workspaces.list_shares(
+        response = smart.Workspaces.list_shares(
             wrkspc_id,       # workspace_id
             include_all=True)
         current_shares = [share['name'] for share in response.to_dict()['data']]
@@ -367,14 +357,14 @@ class SmartsheetClient():
         return False 
     def ss_permission_setting(self, project: ProjectObj, wrkspc_id: int):
         '''sharing the workspace with those who need it + standard project admin'''
-        self.log.log('configuring workspace permissions...')
+        logger.info('configuring workspace permissions...')
         email_list = project.user_emails
         shares = [
             {'type': 'email', 'value': email, 'access_level': 'ADMIN'} for email in email_list
         ] + [
-            {'type': 'groupId', 'value': self.field_admins_id, 'access_level': 'ADMIN'},
-            {'type': 'groupId', 'value': self.project_admins_id, 'access_level': 'ADMIN'},
-            {'type': 'groupId', 'value': self.project_review_id, 'access_level': 'EDITOR'}
+            {'type': 'groupId', 'value': ss_config['field_admins_id'], 'access_level': 'ADMIN'},
+            {'type': 'groupId', 'value': ss_config['project_admins_id'], 'access_level': 'ADMIN'},
+            {'type': 'groupId', 'value': ss_config['project_review_id'], 'access_level': 'EDITOR'}
         ]
 
         for share in shares:
@@ -384,13 +374,13 @@ class SmartsheetClient():
             })
 
             try:
-                self.smart.Workspaces.share_workspace(wrkspc_id, share_data)
+                smart.Workspaces.share_workspace(wrkspc_id, share_data)
             except ApiError:
                 if share['type'] == 'email':
-                    self.log.log(f"{share['value']} already has access to workspace")
+                    logger.debug(f"{share['value']} already has access to workspace")
                 else:
                     group_name = share['value']
-                    self.log.log(f"{group_name} already has access to workspace")
+                    logger.debug(f"{group_name} already has access to workspace")
 #endregion
 #region posting 
     def get_new_post_ids(self, project:ProjectObj, posting_data:PostingData):
@@ -413,13 +403,13 @@ class SmartsheetClient():
         return posting_data
     def post_resulting_links(self, project:ProjectObj, posting_data:PostingData):
         '''posts links that were created to the regional Project List'''
-        new_row = self.smart.models.Row()
+        new_row = smart.models.Row()
         new_row.id = posting_data.row
 
         link_list = [{'column_id': posting_data.eg_column_id, 'link': posting_data.eg_link}, {'column_id': posting_data.ss_column_id, 'link': posting_data.ss_link}]
         for item in link_list:
             if item.get("link") != "":
-                new_cell = self.smart.models.Cell()
+                new_cell = smart.models.Cell()
                 new_cell.column_id = item.get("column_id")
                 new_cell.value = item.get("link")
                 new_cell.strict = False
@@ -428,53 +418,28 @@ class SmartsheetClient():
                 new_row.cells.append(new_cell)
         if str(new_row.to_dict().get("cells")) != "None":
             # Update rows
-            response = self.smart.Sheets.update_rows(
+            response = smart.Sheets.update_rows(
               posting_data.sheet_id,      # sheet_id
               [new_row])
-            self.log.log(f'link-post into {project.region} Project List complete')   
+            logger.info(f'link-post into {project.region} Project List complete')   
     def post_update_checkbox(self, saas_row_id:int):
         '''checks checkbox for more recent item with given enum for updatings (this could get buggy if two back to back requests exist)'''
-        new_cell = self.smart.models.Cell({'column_id' : self.saas_update_check_column_id, 'value': "1", 'strict': False})
-        new_row = self.smart.models.Row({'id':saas_row_id})
+        new_cell = smart.models.Cell({'column_id' : ss_config['saas_update_check_column_id'], 'value': "1", 'strict': False})
+        new_row = smart.models.Row({'id':saas_row_id})
         new_row.cells.append(new_cell)
 
         if str(new_row.to_dict().get("cells")) != "None":
             # Update rows
-            updated_row = self.smart.Sheets.update_rows(
-              self.saas_id,      # sheet_id
+            updated_row = smart.Sheets.update_rows(
+              ss_config['saas_id'],      # sheet_id
               [new_row])
             if updated_row.message == 'SUCCESS':
-                self.log.log(f'checked update bool in Saas Admin Page')
+                logger.info(f'checked update bool in Saas Admin Page')
             else:
-                self.log.log(f'update bool checkbox posting had result of {updated_row.message}')
+                logger.info(f'update bool checkbox posting had result of {updated_row.message}')
 #endregion
 
 
 
 if __name__ == "__main__":
-    config = {
-        'smartsheet_token':smartsheet_admin_token,
-        'regional_sheetid_obj':
-            {
-                "ALL": "3858046490306436",
-                "INTAKE": "6270136630962052",
-                "HI": "691453002311556",
-                "NY": "3506202769418116",
-                "NORCAL": "2943252815996804",
-                "SOCAL": "5758002583103364",
-                "WA": "1254402955732868",
-                "FL": "5195052629682052",
-                "MTN.": "8009802396788612",
-                "ATX": "269240537245572",
-                "NE": "5898740071458692"
-            },
-        'wkspc_template_id':  5301436075534212,
-        'automated_wkspc_template_id': 7768425427691396,
-        'saas_id': 5728420458981252, 
-        'pl30_id': 3858046490306436,
-    }
-    ss = SmartsheetClient(config)
-    enum='02415'
-    sheet_id = ss.sheet_id_from_enum(enum)
-    obj = ss.build_proj_obj(sheet_id, enum)
-    print(obj)
+    pass
