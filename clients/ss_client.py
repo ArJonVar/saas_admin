@@ -46,6 +46,7 @@ class ProjectObj:
     regional_sheet_id: str
     ss_link: str
     eg_link: str
+    eg_path: str
     action_type: str
     need_update: bool
     ss_workspace_name: str
@@ -85,8 +86,8 @@ class PostingData:
 class SmartsheetClient():
     '''words'''
     def __init__(self):
+        logger.debug('Initializing Smartsheet Client...')
         self.ss_link = ""
-        logger.info('Initializing Smartsheet Client...')
         self.cached_sheets = {
             'SAAS':None,
             'HI': None,
@@ -261,6 +262,7 @@ class SmartsheetClient():
             regional_sheet_id=regional_sheet_id,
             ss_link=proj_row['SMARTSHEET'],
             eg_link=proj_row['EGNYTE'],
+            eg_path='tbd',
             action_type=saas_row['ADMINISTRATIVE Action Type'],
             need_update=(saas_row['Update Conditional'] == '1'),
             ss_workspace_name=f"Project_{proj_row['FULL NAME'][:35]}_{enum}",

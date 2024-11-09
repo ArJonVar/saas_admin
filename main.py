@@ -9,31 +9,17 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
+from clients.eg_client import EgnyteClient
 from clients.ss_client import SmartsheetClient, ProjectObj, PostingData
 import logging
 from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-
-
-
-# Check if we are on a dev computer or server
-if os.name == 'nt':
-    sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
-else:
-    sys.path.append(os.path.expanduser(r"~/_Master"))
-
-# Import master_logger, master_smartsheet_grid, and master_globals
-try:
-    from master_smartsheet_grid import grid 
-except ImportError as e:
-    print(f"Error importing module: {e}")
-    sys.exit(1)
 #endregion
 
 ss_client = SmartsheetClient()
-# eg_client = EgnyeClient(eg_config, log)
+eg_client = EgnyteClient()
 
 def new_ss_workspace(project: ProjectObj, posting_data:PostingData):
     '''this uses the SS client to create a new project workspace from the template, giving it appropriate permissions and then posting the link back to the project list'''
@@ -61,7 +47,16 @@ def update_ss_workspace(project:ProjectObj):
     logger.info("ss update complete")
 def new_eg_folder(project:ProjectObj, posting_data: PostingData):
     '''words'''
-    pass
+    logger.info(f"Creating Egnyte Folder for {project.name}")
+    eg_client.update_eg_project_path(project)
+    new_folder = eg_client.create_folder(project.path)
+    permission_members = eg_client.prepare_new_permission_group(project)
+    permission_group_id = eg_client.generate_permission_group(permission_members, project)
+    eg_client.set_permission_on_new_folder
+    eg_client.copy_template_to_new_folder
+    eg_client.restrict_move_n_delete
+    eg_client.generate_folder_link
+    eg_client.execute_link_post
 def update_eg_folder(project:ProjectObj):
     '''words'''
     pass
@@ -104,4 +99,5 @@ def main():
         main_per_row(saas_row_id)
     logger.debug('finished!')
 
-main()
+# main()
+eg = EgnyteClient()
