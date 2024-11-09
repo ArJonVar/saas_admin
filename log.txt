@@ -1,0 +1,65 @@
+
+
+11/09/2024 10:37:57  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+  00:00  clients.ss_client.handle_cached_smartsheets(): Loading the SAAS Smartsheet...
+
+11/09/2024 10:41:03  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+  00:41  clients.ss_client.handle_cached_smartsheets(): Loading the SAAS Smartsheet...
+
+11/09/2024 10:42:36  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+  00:00  clients.ss_client.handle_cached_smartsheets(): Loading the SAAS Smartsheet...
+  00:34  __main__.main(): 1/2: 855 Chesnut
+  00:34  clients.ss_client.handle_cached_smartsheets(): Loading the NORCAL Smartsheet...
+  00:45  __main__.main_per_row(): 
+----------------
+PROJECT: 855 Chesnut
+
+name: 855 Chesnut, enum: 02391, saas row id=3799003178438532
+region: NORCAL, state: CA
+users: Bernie Flather, Michael Clark, Joseph Foronda, Taylor Caldecott, dsamson@dowbuilt.com
+user_emails: taylorc@dowbuilt.com, mikec@dowbuilt.com, bernief@dowbuilt.com, josephf@dowbuilt.com
+action_type: NEW, need_update: False,
+need_new_eg: False, need_new_ss: False
+eg_link: https://dowbuilt.egnyte.com/navigate/folder/1795528f-dfd5-4a62-8608-242121cb982c
+ss_link: https://app.smartsheet.com/workspaces/x83Mfgccfrvgxv497fgjRv5mhxQfGCr8RVFMfXP1
+----------------
+
+  00:45  __main__.main(): 2/2: Yang Restoration
+  00:45  clients.ss_client.handle_cached_smartsheets(): Loading the WA Smartsheet...
+  01:02  __main__.main_per_row(): 
+----------------
+PROJECT: Yang Restoration
+
+name: Yang Restoration, enum: 02399, saas row id=3700892369129348
+region: WA, state: WA
+users: Araceli Espinoza, Paul Klemm, paulk@dowbuilt.com
+user_emails: paulk@dowbuilt.com, aracelie@dowbuilt.com
+action_type: NEW, need_update: False,
+need_new_eg: False, need_new_ss: False
+eg_link: https://dowbuilt.egnyte.com/navigate/folder/d0c85e6e-e629-480e-b07a-067a72a1f242
+ss_link: None
+----------------
+
+  01:02  __main__.main(): finished!
+
+11/09/2024 10:56:53  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+
+11/09/2024 11:00:05  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+  00:00  clients.ss_client.handle_cached_smartsheets(): Fetching the SAAS Smartsheet...
+  00:31  __main__.main(): 1/2: 855 Chesnut
+
+11/09/2024 11:01:38  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+  00:00  clients.ss_client.handle_cached_smartsheets(): Fetching the SAAS Smartsheet...
+  00:31  __main__.main(): 1/2: 855 Chesnut
+
+11/09/2024 11:03:14  main.py--
+  00:00  clients.ss_client.__init__(): Initializing Smartsheet Client...
+  00:00  clients.ss_client.handle_cached_smartsheets(): Fetching the SAAS Smartsheet...
+  00:30  __main__.main(): 1/2: 855 Chesnut
+  00:30  clients.ss_client.handle_cached_smartsheets(): Fetching the NORCAL Smartsheet...
