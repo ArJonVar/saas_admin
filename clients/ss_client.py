@@ -12,6 +12,10 @@ import re
 import pandas as pd
 from dataclasses import dataclass
 from typing import Optional, Tuple, List
+import logging
+from configs.setup_logger import setup_logger
+logger = setup_logger(__name__, level=logging.DEBUG)
+
 
 # Check if we are on a dev computer or server
 if os.name == 'nt':
@@ -129,6 +133,7 @@ default_ss_config = {
 class SmartsheetClient():
     '''words'''
     def __init__(self, log, config:dict = None):
+        logger.debug('Initializing Smartsheet Client...')
         if config is None:
             config = default_ss_config
         self.apply_config(config)
