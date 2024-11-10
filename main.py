@@ -15,11 +15,14 @@ import logging
 from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
+eg_config = json.loads(Path("configs/eg_config.json").read_text())
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 #endregion
 
 ss_client = SmartsheetClient()
 eg_client = EgnyteClient()
+
+
 
 def new_ss_workspace(project: ProjectObj, posting_data:PostingData):
     '''this uses the SS client to create a new project workspace from the template, giving it appropriate permissions and then posting the link back to the project list'''
@@ -46,17 +49,17 @@ def update_ss_workspace(project:ProjectObj):
 
     logger.info("ss update complete")
 def new_eg_folder(project:ProjectObj, posting_data: PostingData):
-    '''words'''
+    '''generates path to new folder, creates folder from path, generates new permission group with users, shares various permission groups to folder, copies template, restricts delete, generates link and posts it to ss'''
     logger.info(f"Creating Egnyte Folder for {project.name}")
-    eg_client.update_eg_project_path(project)
-    new_folder = eg_client.create_folder(project.path)
+    eg_client.generate_eg_project_path(project)
+    new_folder = eg_client.create_folder(project.eg_path)
     permission_members = eg_client.prepare_new_permission_group(project)
     permission_group_id = eg_client.generate_permission_group(permission_members, project)
-    eg_client.set_permission_on_new_folder
-    eg_client.copy_template_to_new_folder
-    eg_client.restrict_move_n_delete
-    eg_client.generate_folder_link
-    eg_client.execute_link_post
+    folder_permission_api_dict = eg_client.set_permissions_on_new_folder(project)
+    folder_move_api_dict = eg_client.copy_folders_to_new_location(source_path = eg_config['eg_template_path'], destination_path = project.eg_path)
+    restrict_api_dict = eg_client.restrict_move_n_delete(project.eg_path)
+    posting_data = eg_client.generate_folder_link(project.eg_path, posting_data)
+    # eg_client.execute_link_post
 def update_eg_folder(project:ProjectObj):
     '''words'''
     pass
@@ -100,4 +103,13 @@ def main():
     logger.debug('finished!')
 
 # main()
-eg = EgnyteClient()
+#DEBUG!!
+saas_row_ids, project_names, enums = identify_open_saas_rows()
+project = ss_client.build_proj_obj(
+    saas_row_id=saas_row_ids[1])
+project.name = 'delete_me2'
+project.region = 'ATX'
+project.state = 'TX'
+eg_client.generate_eg_project_path(project)
+
+

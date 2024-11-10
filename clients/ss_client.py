@@ -43,6 +43,7 @@ class ProjectObj:
     saas_row_id:str
     name: str
     region: str
+    job_type: str
     regional_sheet_id: str
     ss_link: str
     eg_link: str
@@ -132,7 +133,7 @@ class SmartsheetClient():
         regional_sheet_id = ss_config['regional_sheetid_obj'][region]
         regional_sheet = self.handle_cached_smartsheets(region, regional_sheet_id)
         return saas_sheet, regional_sheet, regional_sheet_id
-    def filter_to_relevent_row(self, saas_sheet: grid, regional_sheet: grid, enum:str, saas_row_id:str) -> tuple[str, pd.Series, pd.Series]:
+    def filter_to_relevent_row(self, saas_sheet: grid, regional_sheet: grid, enum:str, saas_row_id:str) -> tuple[pd.Series, pd.Series]:
         """
         Filteres the smartsheet data to the correct enunerator/sheet id so we have easy to use row data
 
@@ -259,6 +260,7 @@ class SmartsheetClient():
             saas_row_id=saas_row_id,
             name=proj_row['FULL NAME'],
             region=proj_row['REGION'],
+            job_type=proj_row['JOB TYPE'],
             regional_sheet_id=regional_sheet_id,
             ss_link=proj_row['SMARTSHEET'],
             eg_link=proj_row['EGNYTE'],
