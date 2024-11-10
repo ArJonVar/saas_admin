@@ -24,7 +24,7 @@ from requests.structures import CaseInsensitiveDict
 import json
 import re
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
 from pathlib import Path
 import logging
@@ -32,6 +32,7 @@ from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
 smart = smartsheet.Smartsheet(access_token=smartsheet_admin_token)
 smart.errors_as_exceptions(True)
+grid.token=smartsheet_admin_token
 ss_config = json.loads(Path("configs/ss_config.json").read_text())
 #endregion
 
@@ -42,9 +43,11 @@ class ProjectObj:
     saas_row_id:str
     name: str
     region: str
+    job_type: str
     regional_sheet_id: str
     ss_link: str
     eg_link: str
+    eg_path: str
     action_type: str
     need_update: bool
     ss_workspace_name: str
@@ -66,28 +69,20 @@ class ProjectObj:
             f"need_new_eg: {self.need_new_eg}, need_new_ss: {self.need_new_ss}\n"
             f"eg_link: {self.eg_link}\n"
             f"ss_link: {self.ss_link}\n"
-            f"----------------\n"
+            f"----------------"
         )
-
 @dataclass
 class PostingData:
-    need_update_column_id: Optional[int] = None
-    saas_admin_sheet_id: Optional[int] = None
-    saas_admin_row_id: Optional[int] = None
-    regional_sheet_id: Optional[int] = None
-    regional_row_id: Optional[int] = None
-    eg_column_id: Optional[int] = None
-    eg_link: Optional[str] = None
-    ss_column_id: Optional[int] = None
-    ss_link: Optional[str] = None
+    regional_sheet_id: str
+    regional_row_id: int
+    post: list[dict] # List of {'column_id': int, 'link': str}
 #endregion
 
 class SmartsheetClient():
     '''words'''
     def __init__(self):
-        grid.token=smartsheet_admin_token
+        logger.debug('Initializing Smartsheet Client...')
         self.ss_link = ""
-        logger.info('Initializing Smartsheet Client...')
         self.cached_sheets = {
             'SAAS':None,
             'HI': None,
@@ -132,7 +127,7 @@ class SmartsheetClient():
         regional_sheet_id = ss_config['regional_sheetid_obj'][region]
         regional_sheet = self.handle_cached_smartsheets(region, regional_sheet_id)
         return saas_sheet, regional_sheet, regional_sheet_id
-    def filter_to_relevent_row(self, saas_sheet: grid, regional_sheet: grid, enum:str, saas_row_id:str) -> tuple[str, pd.Series, pd.Series]:
+    def filter_to_relevent_row(self, saas_sheet: grid, regional_sheet: grid, enum:str, saas_row_id:str) -> tuple[pd.Series, pd.Series]:
         """
         Filteres the smartsheet data to the correct enunerator/sheet id so we have easy to use row data
 
@@ -230,7 +225,7 @@ class SmartsheetClient():
                     )
         return list(set(emails))
     #endregion
-    def build_proj_obj(self, saas_row_id: str) -> ProjectObj:
+    def build_proj_obj(self, saas_row_id: int) -> ProjectObj:
         """
         Builds the ProjectObj object that guides the action phase of this class (from SaaS admin sheet).
 
@@ -259,9 +254,11 @@ class SmartsheetClient():
             saas_row_id=saas_row_id,
             name=proj_row['FULL NAME'],
             region=proj_row['REGION'],
+            job_type=proj_row['JOB TYPE'],
             regional_sheet_id=regional_sheet_id,
             ss_link=proj_row['SMARTSHEET'],
             eg_link=proj_row['EGNYTE'],
+            eg_path='tbd',
             action_type=saas_row['ADMINISTRATIVE Action Type'],
             need_update=(saas_row['Update Conditional'] == '1'),
             ss_workspace_name=f"Project_{proj_row['FULL NAME'][:35]}_{enum}",
@@ -309,7 +306,7 @@ class SmartsheetClient():
         return region
 #endregion
 #region workspaces
-    def save_as_new_wrkspc(self, template_id: str, name:str):
+    def save_as_new_wrkspc(self, template_id: str, name:str) ->dict:
         '''makes new workspace from another one as the template'''
         return smart.Workspaces.copy_workspace(
             template_id,           # workspace_id
@@ -317,9 +314,9 @@ class SmartsheetClient():
                 'new_name': f"{name}"
                 })
             ).to_dict()
-    def get_wrkspcs(self):
+    def get_wrkspcs(self) -> dict:
         return smart.Workspaces.list_workspaces(include_all=True).to_dict()
-    def get_wrkspc_from_project_link(self, project: ProjectObj):
+    def get_wrkspc_from_project_link(self, project: ProjectObj) -> dict:
         '''generates a list of all workspaces, searches for a workspace with the given SS link and then returns the associated ID'''
         wrkspc = None
         get_workspace_data = self.get_wrkspcs()
@@ -347,7 +344,7 @@ class SmartsheetClient():
             if workspace.get("name") == f'Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")}':
                 self.isnew_bool = False
                 logger.info(f'a workspace audit within smartsheet revealed that Project_{self.proj_dict.get("name")}_{self.proj_dict.get("enum")} already exists')  
-    def wrkspc_shares_need_updating(self, project:ProjectObj, wrkspc_id: int):
+    def wrkspc_shares_need_updating(self, project:ProjectObj, wrkspc_id: int) -> bool:
         '''returns true if the workspace is missing user in shares group'''
         response = smart.Workspaces.list_shares(
             wrkspc_id,       # workspace_id
@@ -361,7 +358,7 @@ class SmartsheetClient():
         return False 
     def ss_permission_setting(self, project: ProjectObj, wrkspc_id: int):
         '''sharing the workspace with those who need it + standard project admin'''
-        logger.info('configuring workspace permissions...')
+        logger.info('Configuring Workspace permissions...')
         email_list = project.user_emails
         shares = [
             {'type': 'email', 'value': email, 'access_level': 'ADMIN'} for email in email_list
@@ -387,45 +384,48 @@ class SmartsheetClient():
                     logger.debug(f"{group_name} already has access to workspace")
 #endregion
 #region posting 
-    def get_new_post_ids(self, project:ProjectObj, posting_data:PostingData):
-        '''uses the regional sheet id to gather column ids for Egnyte and Smartsheet column and row Id for row with the enum we are working with'''
-        sheet = grid(project.regional_sheet_id)
-        sheet.fetch_content()
+    def generate_posting_data(self, project: ProjectObj) -> PostingData:
+        """Generates PostingData for the project."""
+        sheet = self.handle_cached_smartsheets(project.region, ss_config["regional_sheetid_obj"][project.region])
         sheet_columns = sheet.get_column_df()
-        row_ids = sheet.grid_row_ids
-        sheet.df["id"]=row_ids
-        eg_column_id = sheet_columns.loc[sheet_columns['title'] == "EGNYTE"]["id"].tolist()[0]
-        ss_column_id = sheet_columns.loc[sheet_columns['title'] == "SMARTSHEET"]["id"].tolist()[0]
-        regional_row_id = sheet.df.loc[sheet.df['ENUMERATOR'] == project.enum]["id"].tolist()[0]
-        posting_data.regional_sheet_id = project.regional_sheet_id
-        posting_data.regional_row_id = regional_row_id
-        posting_data.eg_column_id = eg_column_id
-        posting_data.eg_link = project.eg_link
-        posting_data.ss_column_id = ss_column_id
-        posting_data.ss_link = project.ss_link
 
-        return posting_data
-    def post_resulting_links(self, project:ProjectObj, posting_data:PostingData):
+        # Retrieve required IDs
+        eg_column_id = sheet_columns.loc[sheet_columns['title'] == "EGNYTE", "id"].squeeze()
+        ss_column_id = sheet_columns.loc[sheet_columns['title'] == "SMARTSHEET", "id"].squeeze()
+        regional_row_id = sheet.df.loc[sheet.df['ENUMERATOR'] == project.enum, "id"].squeeze()
+
+        # Populate links list based on conditions
+        post = []
+        if project.need_new_eg:
+           post.append({'column_id': int(eg_column_id), 'link': project.eg_link})
+        if project.need_new_ss:
+            post.append({'column_id': int(ss_column_id), 'link': project.ss_link})
+
+        return PostingData(
+            regional_sheet_id=project.regional_sheet_id,
+            regional_row_id=int(regional_row_id),
+            post=post
+        )
+    def post_resulting_links(self, project:ProjectObj):
         '''posts links that were created to the regional Project List'''
+        posting_data = self.generate_posting_data(project)
+        
         new_row = smart.models.Row()
-        new_row.id = posting_data.row
+        new_row.id = posting_data.regional_row_id
 
-        link_list = [{'column_id': posting_data.eg_column_id, 'link': posting_data.eg_link}, {'column_id': posting_data.ss_column_id, 'link': posting_data.ss_link}]
-        for item in link_list:
-            if item.get("link") != "":
-                new_cell = smart.models.Cell()
-                new_cell.column_id = item.get("column_id")
-                new_cell.value = item.get("link")
-                new_cell.strict = False
+        for cell in posting_data.post:
+            new_cell = smart.models.Cell()
+            new_cell.column_id = cell.get("column_id")
+            new_cell.value = cell.get("link")
+            new_cell.strict = False
+            new_row.cells.append(new_cell)
 
-                # Build the row to update
-                new_row.cells.append(new_cell)
-        if str(new_row.to_dict().get("cells")) != "None":
-            # Update rows
-            response = smart.Sheets.update_rows(
-              posting_data.sheet_id,      # sheet_id
-              [new_row])
-            logger.info(f'link-post into {project.region} Project List complete')   
+        if new_row.cells:
+            response = smart.Sheets.update_rows(posting_data.regional_sheet_id, [new_row])
+            if response.message == "SUCCESS":
+                logger.info(f'Link-post into {project.region} Project List complete')
+            else:
+                logger.warning("Looks like links didn't post! Check ss_client.post_resulting_links for bugs.")
     def post_update_checkbox(self, saas_row_id:int):
         '''checks checkbox for more recent item with given enum for updatings (this could get buggy if two back to back requests exist)'''
         new_cell = smart.models.Cell({'column_id' : ss_config['saas_update_check_column_id'], 'value': "1", 'strict': False})
@@ -442,8 +442,6 @@ class SmartsheetClient():
             else:
                 logger.info(f'update bool checkbox posting had result of {updated_row.message}')
 #endregion
-
-
 
 if __name__ == "__main__":
     pass
