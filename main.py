@@ -74,6 +74,7 @@ def update_eg_folder(project:ProjectObj):
         
         #update folder name/location
             if correct_project_name not in eg_client.handle_cached_paths(folder_id):   
+                logger.info(f"debugging folder_id: {folder_id}")
                 eg_client.change_folder_name(folder_id)
     
         logger.info("EG update complete")

@@ -349,7 +349,7 @@ class SmartsheetClient():
         response = smart.Workspaces.list_shares(
             wrkspc_id,       # workspace_id
             include_all=True)
-        current_shares = [share['name'] for share in response.to_dict()['data']]
+        current_shares = [share.get('name') for share in response.to_dict()['data']]
         required_shares = project.users
         required_shares.extend(['Smartsheet Admin', 'Project-Admins', 'Project-Review', 'Field_Admins'])
         for share in required_shares:
