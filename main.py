@@ -27,7 +27,7 @@ def new_ss_workspace(project: ProjectObj):
     logger.info(f"Creating Smartsheet Workspace for {project.name}...")
     new_wrkspc = ss_client.save_as_new_wrkspc(ss_config['wkspc_template_id'], project.ss_workspace_name)
     new_wrkspc_id = new_wrkspc.get("data").get("id")
-    project.ss_link = new_wrkspc_id = new_wrkspc.get("data").get("permalink")
+    project.ss_link = new_wrkspc.get("data").get("permalink")
     ss_client.ss_permission_setting(project, new_wrkspc_id)
     logger.info("SS creation complete")
 def update_ss_workspace(project:ProjectObj):

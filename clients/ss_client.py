@@ -262,8 +262,8 @@ class SmartsheetClient():
             action_type=saas_row['ADMINISTRATIVE Action Type'],
             need_update=(saas_row['Update Conditional'] == '1'),
             ss_workspace_name=f"Project_{proj_row['FULL NAME'][:35]}_{enum}",
-            need_new_ss=(str(proj_row['SMARTSHEET']) == "none" and saas_row['SM Conditional'] == '1'),
-            need_new_eg=(str(proj_row['EGNYTE']) == "none" and saas_row['EGN Conditional'] == '1'),
+            need_new_ss=(not proj_row['SMARTSHEET'] and saas_row['SM Conditional'] == '1'),
+            need_new_eg=(not proj_row['EGNYTE'] and saas_row['EGN Conditional'] == '1'),
             users=users,
             user_emails=user_emails,
             state=proj_row['STATE']
