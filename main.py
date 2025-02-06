@@ -115,7 +115,10 @@ def main():
     saas_row_ids, project_names, enums = identify_open_saas_rows()
     for i, (saas_row_id, project_name, enum) in enumerate(zip(saas_row_ids, project_names, enums), start=1):
         logger.info(f"{i}/{len(saas_row_ids)}: {project_name}")
-        main_per_row(saas_row_id)
+        try:
+            main_per_row(saas_row_id)
+        except Exception as e:
+            logger.error(e)
     logger.debug('finished!')
 
 main()
