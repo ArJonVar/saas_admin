@@ -1,7 +1,5 @@
 #region imports and variables
-import os
-import sys
-import smartsheet
+from pathlib import Path
 import time
 from datetime import datetime
 from smartsheet.exceptions import ApiError
@@ -15,19 +13,8 @@ from dataclasses import dataclass
 import logging
 from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
-
-# Check if we are on a dev computer or server
-if os.name == 'nt':
-    sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
-else:
-    sys.path.append(os.path.expanduser(r"~/_Master"))
-
-# Import master_logger, master_smartsheet_grid, and master_globals
-try:
-    from master_globals import egnyte_token
-except ImportError as e:
-    print(f"Error importing module: {e}")
-    sys.exit(1)
+eg_config = json.loads(Path("configs/eg_config.json").read_text())
+egnyte_token = eg_config["egnyte_token"]
 #endregion
 
 class EgnyteClient():

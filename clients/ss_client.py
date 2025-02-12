@@ -2,19 +2,6 @@
 # Check if we are on a dev computer or server
 import os
 import sys
-if os.name == 'nt':
-    sys.path.append(r"Z:\Shared\IT\Projects and Solutions\Python\Ariel\_Master")
-else:
-    sys.path.append(os.path.expanduser(r"~/_Master"))
-
-# Import master_logger, master_smartsheet_grid, and master_globals
-try:
-    from master_smartsheet_grid import grid
-    from master_globals import smartsheet_admin_token
-except ImportError as e:
-    print(f"Error importing module: {e}")
-    sys.exit(1)
-
 import smartsheet
 import time
 from datetime import datetime
@@ -28,12 +15,14 @@ from dataclasses import dataclass, field
 from typing import Optional, Tuple, List
 from pathlib import Path
 import logging
+from clients.grid import grid
 from configs.setup_logger import setup_logger
 logger = setup_logger(__name__, level=logging.DEBUG)
+ss_config = json.loads(Path("configs/ss_config.json").read_text())
+smartsheet_admin_token = ss_config["smartsheet_admin_token"]
 smart = smartsheet.Smartsheet(access_token=smartsheet_admin_token)
 smart.errors_as_exceptions(True)
 grid.token=smartsheet_admin_token
-ss_config = json.loads(Path("configs/ss_config.json").read_text())
 #endregion
 
 #region Models
