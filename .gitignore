@@ -2,3 +2,4 @@ __pycache__/
 *pyc
 eg_config.json
 ss_config.json
+log.log
